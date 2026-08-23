@@ -35,12 +35,9 @@ itself is somehow disabled.
 ## The force-install option
 
 `ExtensionInstallForcelist` is the strongest setting — Chrome physically greys
-out the Remove button. It needs a **Chrome Web Store extension ID**, because
-Chrome will only force-install from a store update URL.
+out the Remove button. 
 
-So while you're testing locally with Load unpacked, leave that prompt blank.
-Blocking the extensions page already stops casual removal. Once CoolHeaded is
-published to the Web Store, run the installer again and enter the ID.
+
 
 ## Removing it
 
