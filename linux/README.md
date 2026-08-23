@@ -19,8 +19,8 @@ No browser extension can prevent that. This folder fixes it using Chrome
    and `sudo ./install-coolheaded.sh` then reports the confusing
    `command not found`. Running it through `bash` avoids both.
 
-3. Leave the extension ID blank while testing locally.
-4. **Quit the browser completely** and reopen it. Closing the window is not
+
+3. **Quit the browser completely** and reopen it. Closing the window is not
    enough — check with `pgrep -a chrome` and kill anything left.
 
 Verify: `chrome://policy` should list the entries. `chrome://extensions`
