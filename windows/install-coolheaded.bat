@@ -69,6 +69,13 @@ reg add "%EDGE%" /v InPrivateModeAvailability /t REG_DWORD /d 1 /f >nul
 reg add "%FIREFOX%" /v DisablePrivateBrowsing /t REG_DWORD /d 1 /f >nul
 reg add "%FIREFOX%" /v BlockAboutConfig /t REG_DWORD /d 1 /f >nul
 
+:: Firefox's extension lock was missing from the Windows script entirely - the
+:: Linux one had it, so on Windows a Firefox user could simply remove
+:: CoolHeaded and the whole lock was Chrome-only. Firefox takes ExtensionSettings
+:: as a single JSON string, not as nested keys the way Chrome does. The ID must
+:: match browser_specific_settings.gecko.id in the Firefox manifest.
+reg add "%FIREFOX%" /v ExtensionSettings /t REG_SZ /d "{\"threshold@shanaboxer.github.io\":{\"installation_mode\":\"locked\"}}" /f >nul
+
 if /i "%YT%"=="y" (
   reg add "%CHROME%" /v ForceYouTubeRestrict /t REG_DWORD /d 2 /f >nul
   reg add "%EDGE%" /v ForceYouTubeRestrict /t REG_DWORD /d 2 /f >nul

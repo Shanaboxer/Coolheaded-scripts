@@ -45,16 +45,21 @@ echo   Code accepted. Removing policy...
 set CHROME=HKLM\SOFTWARE\Policies\Google\Chrome
 set EDGE=HKLM\SOFTWARE\Policies\Microsoft\Edge
 
+:: Must match install-coolheaded.bat. Used to delete only CoolHeaded's own
+:: entry: the whole ExtensionSettings key was being removed, which would wipe
+:: policy for any OTHER managed extension the machine had.
+set EXTID=geciepejjdhbcafgbfkfnofjlcaholok
+
 reg delete "%CHROME%\URLBlocklist" /f >nul 2>&1
 reg delete "%CHROME%\ExtensionInstallForcelist" /f >nul 2>&1
-reg delete "%CHROME%\ExtensionSettings" /f >nul 2>&1
+reg delete "%CHROME%\ExtensionSettings\%EXTID%" /f >nul 2>&1
 reg delete "%CHROME%" /v ForceGoogleSafeSearch /f >nul 2>&1
 reg delete "%CHROME%" /v ForceYouTubeRestrict /f >nul 2>&1
 reg delete "%CHROME%" /v IncognitoModeAvailability /f >nul 2>&1
 
 reg delete "%EDGE%\URLBlocklist" /f >nul 2>&1
 reg delete "%EDGE%\ExtensionInstallForcelist" /f >nul 2>&1
-reg delete "%EDGE%\ExtensionSettings" /f >nul 2>&1
+reg delete "%EDGE%\ExtensionSettings\%EXTID%" /f >nul 2>&1
 reg delete "%EDGE%" /v ForceGoogleSafeSearch /f >nul 2>&1
 reg delete "%EDGE%" /v ForceYouTubeRestrict /f >nul 2>&1
 reg delete "%EDGE%" /v ForceBingSafeSearch /f >nul 2>&1
@@ -64,6 +69,10 @@ set FIREFOX=HKLM\SOFTWARE\Policies\Mozilla\Firefox
 reg delete "%FIREFOX%" /v DisablePrivateBrowsing /f >nul 2>&1
 reg delete "%FIREFOX%" /v BlockAboutAddons /f >nul 2>&1
 reg delete "%FIREFOX%" /v BlockAboutConfig /f >nul 2>&1
+
+:: Added alongside the Firefox extension lock in install-coolheaded.bat.
+:: Without this the install would set it and nothing would take it away.
+reg delete "%FIREFOX%" /v ExtensionSettings /f >nul 2>&1
 
 echo.
 echo   Policy removed. Close Chrome completely and reopen it.
