@@ -10,6 +10,27 @@
 # below the extension and can't be changed from inside the browser.
 
 set -euo pipefail
+#
+# ON THE REMOVAL CODE
+#
+# The code is SHA256("coolheaded-removal-" + UTC YYYYMMDDHH), first 8 hex
+# characters, uppercased. It changes hourly and the previous hour is also
+# accepted, so reading it off the screen near an hour boundary still works.
+#
+# It is NOT a secret. The algorithm is in this public repository, and it has to
+# be in the extension too, because the extension must display the same code
+# without contacting any server. Anyone who reads either can compute the current
+# code in one line, without waiting out the cooling-off period.
+#
+# That is a deliberate limit of a free, local-only, no-account tool rather than
+# an oversight, and for something self-imposed it may be the right trade. But it
+# means this is a pause, not a lock, and nothing here should imply otherwise.
+#
+# Closing it properly needs an extension change, not a script change: the
+# extension would generate a random secret per installation, show it once during
+# install, and the install script would store its hash — the way In'Seine's
+# removal PIN works. The cooling-off delay would still come from the extension.
+#
 
 # CoolHeaded's Chrome Web Store extension ID. Permanent: assigned when the
 # listing was created, and unchanged by updates. This is what the policy
@@ -59,6 +80,9 @@ cat <<'BANNER'
   To undo it later, run remove-coolheaded.sh as root with the code
   CoolHeaded gives you after its cooling-off period.
 
+  This is a pause you choose to keep, not a cage. Someone determined to get
+  round it can. The point is the delay between wanting to and being able to.
+
 BANNER
 
 echo
@@ -102,6 +126,11 @@ for dir in "${CHROME_DIRS[@]}"; do
   fi
 done
 
+# "_coolheaded_marker" is not a Firefox policy and Firefox ignores it. It is
+# here so remove-coolheaded.sh can recognise a policies.json as ours and know it
+# is safe to delete. Without a reliable marker the removal script left the file
+# in place and the lock could not be lifted at all — private browsing disabled
+# permanently, on a tool whose entire premise is that you can stop using it.
 FF_POLICY='{
   "policies": {
     "DisablePrivateBrowsing": true,
@@ -109,14 +138,15 @@ FF_POLICY='{
     "ExtensionSettings": {
       "threshold@shanaboxer.github.io": { "installation_mode": "locked" }
     }
-  }
+  },
+  "_coolheaded_marker": "written by CoolHeaded install-coolheaded.sh - safe to remove with remove-coolheaded.sh"
 }'
 
 for dir in "${FIREFOX_DIRS[@]}"; do
   parent="$(dirname "$dir")"
   if [[ -d "$parent" ]]; then
     mkdir -p "$dir"
-    if [[ -f "$dir/policies.json" ]] && ! grep -q 'DisablePrivateBrowsing' "$dir/policies.json" 2>/dev/null; then
+    if [[ -f "$dir/policies.json" ]] && ! grep -q '_coolheaded_marker\|threshold@shanaboxer' "$dir/policies.json" 2>/dev/null; then
       cp "$dir/policies.json" "$dir/policies.json.coolheaded-backup"
       echo "  backed up existing $dir/policies.json"
     fi

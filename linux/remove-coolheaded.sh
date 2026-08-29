@@ -2,6 +2,27 @@
 # CoolHeaded — remove protection (Linux)
 
 set -euo pipefail
+#
+# ON THE REMOVAL CODE
+#
+# The code is SHA256("coolheaded-removal-" + UTC YYYYMMDDHH), first 8 hex
+# characters, uppercased. It changes hourly and the previous hour is also
+# accepted, so reading it off the screen near an hour boundary still works.
+#
+# It is NOT a secret. The algorithm is in this public repository, and it has to
+# be in the extension too, because the extension must display the same code
+# without contacting any server. Anyone who reads either can compute the current
+# code in one line, without waiting out the cooling-off period.
+#
+# That is a deliberate limit of a free, local-only, no-account tool rather than
+# an oversight, and for something self-imposed it may be the right trade. But it
+# means this is a pause, not a lock, and nothing here should imply otherwise.
+#
+# Closing it properly needs an extension change, not a script change: the
+# extension would generate a random secret per installation, show it once during
+# install, and the install script would store its hash — the way In'Seine's
+# removal PIN works. The cooling-off delay would still come from the extension.
+#
 
 if [[ $EUID -ne 0 ]]; then
   echo
@@ -24,6 +45,9 @@ cat <<'BANNER'
 
   If you don't have a code yet, close this and go and do that first.
   Cancelling costs nothing.
+
+  The wait is the whole point. Nothing here can stop you working around it -
+  only you can decide the pause was worth keeping.
 
 BANNER
 
@@ -74,7 +98,13 @@ for dir in "/etc/firefox/policies" "/usr/lib/firefox/distribution" \
     mv "$dir/policies.json.coolheaded-backup" "$dir/policies.json"
     echo "  restored previous $dir/policies.json"
     REMOVED=$((REMOVED+1))
-  elif [[ -f "$dir/policies.json" ]] && grep -q '"BlockAboutAddons"' "$dir/policies.json" 2>/dev/null; then
+  # Recognise the file we wrote. This looked for "BlockAboutAddons", which
+  # install-coolheaded.sh has never written — so on any machine with no
+  # pre-existing policies.json there was no backup to restore AND no match here,
+  # and the Firefox lock could not be lifted at all.
+  elif [[ -f "$dir/policies.json" ]] && \
+       grep -q '_coolheaded_marker\|threshold@shanaboxer\|BlockAboutAddons' \
+            "$dir/policies.json" 2>/dev/null; then
     rm -f "$dir/policies.json"
     echo "  removed $dir/policies.json"
     REMOVED=$((REMOVED+1))
