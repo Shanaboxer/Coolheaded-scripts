@@ -16,15 +16,21 @@ echo.
 echo   COOLHEADED - LOCK THE BROWSER
 echo   ============================
 echo.
-echo   This writes browser policy that:
+echo   ALWAYS APPLIED, to every browser found on this computer, in every
+echo   account, because browser policy is set machine-wide:
 echo.
-echo     * Stops CoolHeaded being removed or disabled - and ONLY CoolHeaded.
-echo       Your other extensions carry on working and stay manageable.
-echo     * Forces Google SafeSearch on, browser-wide
-echo     * Disables private browsing, which otherwise bypasses everything
-echo     * Blocks about:config in Firefox
+echo     * Private browsing disabled. Without it, a private window bypasses
+echo       everything CoolHeaded does.
+echo     * Google SafeSearch forced on in Chrome and Edge
+echo     * about:config blocked in Firefox
 echo.
-echo   None of it can be changed from inside the browser.
+echo   ALSO APPLIED, where the store details are known:
+echo.
+echo     * CoolHeaded installed automatically and made impossible to remove
+echo       - and ONLY CoolHeaded. Your other extensions carry on working.
+echo.
+echo   You'll be told at the end exactly which browsers that reached.
+echo.echo   None of it can be changed from inside the browser.
 echo.
 
 echo   Filter YouTube? Restricted Mode also disables YouTube comments.
@@ -42,6 +48,16 @@ if /i not "%CONFIRM%"=="y" (
 :: CoolHeaded's Chrome Web Store extension ID. Permanent: assigned when the
 :: listing was created, and unchanged by updates.
 set EXTID=geciepejjdhbcafgbfkfnofjlcaholok
+
+:: CoolHeaded's add-on download URL on addons.mozilla.org. SET THIS.
+:: Firefox's only mode that prevents removal is force_installed, and it needs
+:: install_url because Firefox fetches the add-on itself. An earlier version
+:: wrote "installation_mode": "locked", which is not a Firefox value at all -
+:: Firefox ignored it and the lock never worked. Leave empty and the Firefox
+:: extension lock is skipped and SAID to be skipped.
+:: The "latest" form, not a version-numbered one - Firefox re-fetches on
+:: update, and a pinned .xpi would strand every locked machine on one version.
+set "FFURL=https://addons.mozilla.org/firefox/downloads/latest/coolheaded/latest.xpi"
 
 set CHROME=HKLM\SOFTWARE\Policies\Google\Chrome
 set EDGE=HKLM\SOFTWARE\Policies\Microsoft\Edge
@@ -74,7 +90,9 @@ reg add "%FIREFOX%" /v BlockAboutConfig /t REG_DWORD /d 1 /f >nul
 :: CoolHeaded and the whole lock was Chrome-only. Firefox takes ExtensionSettings
 :: as a single JSON string, not as nested keys the way Chrome does. The ID must
 :: match browser_specific_settings.gecko.id in the Firefox manifest.
-reg add "%FIREFOX%" /v ExtensionSettings /t REG_SZ /d "{\"threshold@shanaboxer.github.io\":{\"installation_mode\":\"locked\"}}" /f >nul
+if defined FFURL (
+  reg add "%FIREFOX%" /v ExtensionSettings /t REG_SZ /d "{\"threshold@shanaboxer.github.io\":{\"installation_mode\":\"force_installed\",\"install_url\":\"!FFURL!\"}}" /f >nul
+)
 
 if /i "%YT%"=="y" (
   reg add "%CHROME%" /v ForceYouTubeRestrict /t REG_DWORD /d 2 /f >nul
@@ -84,6 +102,20 @@ if /i "%YT%"=="y" (
 
 echo.
 echo   Done. Close ALL browsers completely and reopen them.
+echo.
+echo   APPLIED EVERYWHERE, in every account on this computer:
+echo     * Private browsing disabled
+echo     * Google SafeSearch forced on in Chrome and Edge
+echo     * about:config blocked in Firefox
+echo.
+echo   CHROME / EDGE: CoolHeaded installs itself and cannot be removed.
+echo.
+if defined FFURL (
+  echo   FIREFOX: CoolHeaded installs itself and cannot be removed.
+) else (
+  echo   FIREFOX: NOT installed or locked. Private browsing and about:config
+  echo   are still blocked, but CoolHeaded itself can be removed.
+)
 echo.
 echo   Check it worked:
 echo     chrome://policy       the entries should be listed
