@@ -37,6 +37,24 @@ set -euo pipefail
 # force-installs and protects from removal.
 EXTID="geciepejjdhbcafgbfkfnofjlcaholok"
 
+# CoolHeaded's add-on download URL on addons.mozilla.org. SET THIS.
+#
+# Firefox cannot "lock an extension where it already is" the way Chrome can.
+# Its ExtensionSettings policy takes three installation_mode values — allowed,
+# blocked and force_installed — and only force_installed prevents removal. It
+# REQUIRES install_url, because Firefox fetches the add-on itself.
+#
+# Earlier versions wrote "installation_mode": "locked", which is not a Firefox
+# value at all. Firefox ignored the entry, so the Firefox extension lock this
+# script claimed to apply had never once worked.
+#
+# The "latest" form, not a version-numbered one — Firefox re-fetches on update,
+# and a pinned .xpi would strand every locked machine on 0.1.1 forever.
+#
+# Leave empty and the Firefox extension lock is skipped and SAID to be skipped,
+# rather than written in a form that quietly does nothing.
+FFURL="https://addons.mozilla.org/firefox/downloads/latest/coolheaded/latest.xpi"
+
 if [[ $EUID -ne 0 ]]; then
   echo
   echo "  This needs root. Run it with:"
@@ -67,15 +85,24 @@ cat <<'BANNER'
   COOLHEADED - LOCK THE BROWSER
   ============================
 
-  This writes browser policy that:
+  ALWAYS APPLIED, to every browser found on this computer, in every account,
+  because browser policy is set system-wide:
 
-    * Stops CoolHeaded being removed or disabled - and ONLY CoolHeaded.
-      Your other extensions carry on working and stay manageable.
-    * Forces Google SafeSearch on, browser-wide
-    * Disables private browsing, which otherwise bypasses everything
-    * Blocks about:config in Firefox
+    * Private browsing disabled. Without it, a private window bypasses
+      everything CoolHeaded does.
+    * Google SafeSearch forced on in Chrome, Edge and other Chromium
+      browsers, below the extension and unchangeable from inside it.
+    * about:config blocked in Firefox.
 
-  None of it can be changed from inside the browser.
+  ALSO APPLIED, where the store details are known:
+
+    * CoolHeaded installed automatically and made impossible to remove or
+      disable - and ONLY CoolHeaded. Your other extensions carry on working
+      and stay manageable.
+
+  You will be told at the end exactly which browsers that last part reached.
+  It needs the extension to be published, because the browser installs it
+  FROM the store.
 
   To undo it later, run remove-coolheaded.sh as root with the code
   CoolHeaded gives you after its cooling-off period.
@@ -131,16 +158,30 @@ done
 # is safe to delete. Without a reliable marker the removal script left the file
 # in place and the lock could not be lifted at all — private browsing disabled
 # permanently, on a tool whose entire premise is that you can stop using it.
-FF_POLICY='{
-  "policies": {
-    "DisablePrivateBrowsing": true,
-    "BlockAboutConfig": true,
-    "ExtensionSettings": {
-      "threshold@shanaboxer.github.io": { "installation_mode": "locked" }
-    }
+if [[ -n "$FFURL" ]]; then
+  FF_EXT=",
+    \"ExtensionSettings\": {
+      \"threshold@shanaboxer.github.io\": {
+        \"installation_mode\": \"force_installed\",
+        \"install_url\": \"${FFURL}\"
+      }
+    }"
+else
+  FF_EXT=""
+fi
+
+# "_coolheaded_marker" is not a Firefox policy and Firefox ignores it. It is
+# here so remove-coolheaded.sh can recognise a policies.json as ours and know it
+# is safe to delete. Without a reliable marker the removal script left the file
+# in place and the lock could not be lifted at all — private browsing disabled
+# permanently, on a tool whose entire premise is that you can stop using it.
+FF_POLICY="{
+  \"policies\": {
+    \"DisablePrivateBrowsing\": true,
+    \"BlockAboutConfig\": true${FF_EXT}
   },
-  "_coolheaded_marker": "written by CoolHeaded install-coolheaded.sh - safe to remove with remove-coolheaded.sh"
-}'
+  \"_coolheaded_marker\": \"written by CoolHeaded install-coolheaded.sh - safe to remove with remove-coolheaded.sh\"
+}"
 
 for dir in "${FIREFOX_DIRS[@]}"; do
   parent="$(dirname "$dir")"
@@ -155,17 +196,40 @@ for dir in "${FIREFOX_DIRS[@]}"; do
   fi
 done
 
-cat <<'DONE'
+echo
+echo "  Done. Now QUIT ALL BROWSERS COMPLETELY and reopen them."
+echo "  Closing the window isn't enough - check with: pgrep -a chrome"
+echo
+echo "  APPLIED EVERYWHERE, in every account on this computer:"
+echo "    * Private browsing disabled"
+echo "    * Google SafeSearch forced on in Chromium browsers"
+echo "    * about:config blocked in Firefox"
+if [[ -n "$YT_POLICY" ]]; then
+  echo "    * YouTube Restricted Mode"
+fi
+echo
+echo "  CHROME / EDGE: CoolHeaded installs itself and cannot be removed."
+echo
 
-  Done. Now QUIT ALL BROWSERS COMPLETELY and reopen them.
-  Closing the window isn't enough - check with: pgrep -a chrome
+if [[ -n "$FFURL" ]]; then
+  echo "  FIREFOX: CoolHeaded installs itself and cannot be removed."
+else
+  echo "  FIREFOX: NOT installed or locked. Private browsing and about:config"
+  echo "  are still blocked there, but CoolHeaded itself can be removed."
+  echo "  (FFURL is unset at the top of this script.)"
+fi
+
+cat <<'DONE'
 
   Check it worked:
     chrome://policy       the entries should be listed
     chrome://extensions   CoolHeaded's Remove button should be greyed out,
                           and every other extension should still be fine
-    Right-click the CoolHeaded icon - Remove should be unavailable
+    about:policies        the Firefox equivalent
 
-  Private browsing should be gone from the menu.
+  Private browsing should be gone from the menu in both.
+
+  Worth doing NOW rather than when you need it: run remove-coolheaded.sh
+  once with the current code, check it works, then run this again.
 
 DONE
