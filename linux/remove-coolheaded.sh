@@ -81,7 +81,7 @@ for dir in \
   "/etc/chromium-browser/policies/managed" \
   "/etc/brave/policies/managed" \
   "/etc/opt/edge/policies/managed" \
-  "/etc/opt/vivaldi/policies/managed" \
+  "/etc/vivaldi/policies/managed" "/etc/opt/vivaldi/policies/managed" \
   "/etc/opera/policies/managed"
 do
   if [[ -f "$dir/coolheaded.json" ]]; then
