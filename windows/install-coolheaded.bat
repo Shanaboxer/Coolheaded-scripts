@@ -63,6 +63,14 @@ set CHROME=HKLM\SOFTWARE\Policies\Google\Chrome
 set EDGE=HKLM\SOFTWARE\Policies\Microsoft\Edge
 set FIREFOX=HKLM\SOFTWARE\Policies\Mozilla\Firefox
 
+:: The other Chromium forks, missing entirely - a child who installed Brave,
+:: Vivaldi or Opera on Windows got a completely unmanaged browser. Brave's own
+:: documentation gives its path as Software\Policies\BraveSoftware\Brave.
+set BRAVE=HKLM\SOFTWARE\Policies\BraveSoftware\Brave
+set CHROMIUM=HKLM\SOFTWARE\Policies\Chromium
+set VIVALDI=HKLM\SOFTWARE\Policies\Vivaldi
+set OPERA=HKLM\SOFTWARE\Policies\Opera Software
+
 echo.
 echo   Writing policy...
 
@@ -81,6 +89,13 @@ reg add "%CHROME%" /v IncognitoModeAvailability /t REG_DWORD /d 1 /f >nul
 reg add "%EDGE%" /v ForceGoogleSafeSearch /t REG_DWORD /d 1 /f >nul
 reg add "%EDGE%" /v ForceBingSafeSearch /t REG_DWORD /d 2 /f >nul
 reg add "%EDGE%" /v InPrivateModeAvailability /t REG_DWORD /d 1 /f >nul
+
+for %%B in ("%BRAVE%" "%CHROMIUM%" "%VIVALDI%" "%OPERA%") do (
+  reg add "%%~B" /v ForceGoogleSafeSearch /t REG_DWORD /d 1 /f >nul
+  reg add "%%~B" /v IncognitoModeAvailability /t REG_DWORD /d 1 /f >nul
+  reg add "%%~B\ExtensionSettings\%EXTID%" /v installation_mode /t REG_SZ /d "force_installed" /f >nul
+  reg add "%%~B\ExtensionSettings\%EXTID%" /v update_url /t REG_SZ /d "https://clients2.google.com/service/update2/crx" /f >nul
+)
 
 reg add "%FIREFOX%" /v DisablePrivateBrowsing /t REG_DWORD /d 1 /f >nul
 reg add "%FIREFOX%" /v BlockAboutConfig /t REG_DWORD /d 1 /f >nul

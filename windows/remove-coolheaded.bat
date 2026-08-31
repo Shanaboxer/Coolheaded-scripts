@@ -65,6 +65,18 @@ reg delete "%EDGE%" /v ForceYouTubeRestrict /f >nul 2>&1
 reg delete "%EDGE%" /v ForceBingSafeSearch /f >nul 2>&1
 reg delete "%EDGE%" /v InPrivateModeAvailability /f >nul 2>&1
 
+:: The other Chromium forks, added alongside them in install-coolheaded.bat.
+:: Without this the install would set them and nothing would take them away.
+for %%B in ("HKLM\SOFTWARE\Policies\BraveSoftware\Brave" ^
+            "HKLM\SOFTWARE\Policies\Chromium" ^
+            "HKLM\SOFTWARE\Policies\Vivaldi" ^
+            "HKLM\SOFTWARE\Policies\Opera Software") do (
+  reg delete "%%~B\ExtensionSettings" /f >nul 2>&1
+  reg delete "%%~B" /v ForceGoogleSafeSearch /f >nul 2>&1
+  reg delete "%%~B" /v IncognitoModeAvailability /f >nul 2>&1
+  reg delete "%%~B" /v ForceYouTubeRestrict /f >nul 2>&1
+)
+
 set FIREFOX=HKLM\SOFTWARE\Policies\Mozilla\Firefox
 reg delete "%FIREFOX%" /v DisablePrivateBrowsing /f >nul 2>&1
 reg delete "%FIREFOX%" /v BlockAboutAddons /f >nul 2>&1
